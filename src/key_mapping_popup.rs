@@ -1,11 +1,12 @@
 use crate::controller::{AppEvents, State};
 use crate::file_manager::FileManager;
+use crate::message::{MessageReceiver, MessageSender};
 use crate::util;
 use crossterm::event::KeyEvent;
 use ratatui::Frame;
 use ratatui::layout::Alignment::Center;
 use ratatui::prelude::{Style, Stylize};
-use ratatui::widgets::{Block, List};
+use ratatui::widgets::{Block, Clear, List};
 
 pub struct KeyMappingPopup;
 
@@ -15,11 +16,10 @@ impl KeyMappingPopup {
     }
 }
 
+impl MessageReceiver for KeyMappingPopup {}
+impl MessageSender for KeyMappingPopup {}
+
 impl State for KeyMappingPopup {
-    fn enter(&mut self, file_manager: &mut FileManager) {}
-
-    fn exit(&mut self, file_manager: &mut FileManager) {}
-
     fn handle_key_event(
         &mut self,
         key_event: KeyEvent,
@@ -52,6 +52,7 @@ impl State for KeyMappingPopup {
         .block(popup_block)
         .highlight_style(Style::new().red());
 
+        frame.render_widget(Clear, popup_area);
         frame.render_widget(list, popup_area);
     }
 }

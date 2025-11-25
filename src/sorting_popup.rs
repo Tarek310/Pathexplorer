@@ -1,10 +1,11 @@
 use crate::controller::{AppEvents, State};
 use crate::file_manager::{FileManager, Sorting};
+use crate::message::{MessageReceiver, MessageSender};
 use crate::util;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::Frame;
 use ratatui::style::{Style, Stylize};
-use ratatui::widgets::{Block, List, ListState};
+use ratatui::widgets::{Block, Clear, List, ListState};
 
 pub struct SortingPopUp {
     list_state: ListState,
@@ -32,11 +33,10 @@ impl SortingPopUp {
     }
 }
 
+impl MessageReceiver for SortingPopUp {}
+impl MessageSender for SortingPopUp {}
+
 impl State for SortingPopUp {
-    fn enter(&mut self, _file_manager: &mut FileManager) {}
-
-    fn exit(&mut self, _file_manager: &mut FileManager) {}
-
     fn handle_key_event(
         &mut self,
         key_event: KeyEvent,
@@ -73,6 +73,7 @@ impl State for SortingPopUp {
         .block(popup_block)
         .highlight_style(Style::new().red());
 
+        frame.render_widget(Clear, popup_area);
         frame.render_stateful_widget(list, popup_area, &mut self.list_state);
     }
 }

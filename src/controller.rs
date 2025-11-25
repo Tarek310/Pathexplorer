@@ -1,10 +1,15 @@
+use crate::app::App;
 use crate::explorer_table::ExplorerTable;
 use crate::file_manager::FileManager;
 use crate::key_mapping_popup::KeyMappingPopup;
+use crate::message::{MessageReceiver, MessageSender};
+use crate::new_file_popup::NewFilePopup;
 use crate::sorting_popup::SortingPopUp;
+use crate::text_field_popup::TextFieldPopup;
 use crossterm::event;
 use crossterm::event::{Event, KeyEvent, KeyEventKind};
 use ratatui::Frame;
+use ratatui::widgets::Clear;
 use std::io;
 
 pub enum AppEvents {
@@ -13,6 +18,8 @@ pub enum AppEvents {
     OpenSortingPopupWindow,
     ChangeToExplorerWindow,
     OpenKeyMappingPopupWindow,
+    OpenTextFieldPopup,
+    OpenNewFilePopup,
     ClosePopUp,
 }
 
@@ -21,9 +28,9 @@ pub enum AppWindows {
     Explorer = 0,
 }
 
-pub trait State {
-    fn enter(&mut self, file_manager: &mut FileManager);
-    fn exit(&mut self, file_manager: &mut FileManager);
+pub trait State: MessageReceiver + MessageSender {
+    fn enter(&mut self, _file_manager: &mut FileManager) {}
+    fn exit(&mut self, _file_manager: &mut FileManager) {}
     fn handle_key_event(
         &mut self,
         key_event: KeyEvent,
@@ -86,9 +93,29 @@ impl Controller {
                         self.popup_stack.push(Box::new(KeyMappingPopup::new()));
                         Ok(AppEvents::None)
                     }
+                    AppEvents::OpenTextFieldPopup => {
+                        self.popup_stack.push(Box::new(TextFieldPopup::new()));
+                        Ok(AppEvents::None)
+                    }
+
+                    AppEvents::OpenNewFilePopup => {
+                        self.popup_stack.push(Box::new(NewFilePopup::new()));
+                        Ok(AppEvents::None)
+                    }
+
                     AppEvents::ClosePopUp => {
                         assert!(!self.popup_stack.is_empty());
-                        self.popup_stack.pop();
+                        let mut recent = self.popup_stack.pop().unwrap();
+                        //pass down message
+                        if !self.popup_stack.is_empty() {
+                            self.popup_stack
+                                .last_mut()
+                                .unwrap()
+                                .handle_message(recent.get_message(), &mut self.file_manager);
+                        } else {
+                            self.all_windows[self.current_window_index as usize]
+                                .handle_message(recent.get_message(), &mut self.file_manager);
+                        }
                         Ok(AppEvents::None)
                     }
                 }
@@ -99,6 +126,7 @@ impl Controller {
 
     pub fn draw(&mut self, frame: &mut Frame) {
         //Draw base window then all popups
+
         self.all_windows[self.current_window_index as usize].draw(frame, &mut self.file_manager);
         for x in &mut self.popup_stack {
             x.draw(frame, &mut self.file_manager);

@@ -1,11 +1,12 @@
 use crate::controller::{AppEvents, State};
 use crate::file_manager::{FileManager, SortDir};
+use crate::message::{MessageReceiver, MessageSender};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::Frame;
 use ratatui::layout::Constraint;
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::symbols::border;
-use ratatui::widgets::{Block, Row, Table, TableState};
+use ratatui::widgets::{Block, Clear, Row, Table, TableState};
 use std::path::PathBuf;
 
 pub struct ExplorerTable {
@@ -36,6 +37,9 @@ impl ExplorerTable {
     }
 }
 
+impl MessageReceiver for ExplorerTable {}
+impl MessageSender for ExplorerTable {}
+
 impl State for ExplorerTable {
     fn enter(&mut self, file_manager: &mut FileManager) {
         file_manager.update();
@@ -55,6 +59,9 @@ impl State for ExplorerTable {
             }
             KeyCode::Char('m') => {
                 return AppEvents::OpenKeyMappingPopupWindow;
+            }
+            KeyCode::Char('n') => {
+                return AppEvents::OpenNewFilePopup;
             }
             KeyCode::Char('d') => {
                 match file_manager.dir_sorting {
@@ -143,6 +150,7 @@ impl State for ExplorerTable {
                 file_manager.show_hidden = !file_manager.show_hidden;
                 file_manager.update();
             }
+
             _ => {}
         }
         AppEvents::None
