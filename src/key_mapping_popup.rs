@@ -37,7 +37,7 @@ impl State for KeyMappingPopup {
         let popup_block = Block::bordered()
             .title("KEY MAPPINGS")
             .title_alignment(Center);
-        let popup_area = util::popup_area(area, 20, 30);
+        let mut popup_area = util::popup_area(area, 20, 30);
 
         let list = List::new(vec![
             "<c> → copy".to_owned(),
@@ -48,10 +48,12 @@ impl State for KeyMappingPopup {
             "<d> → change folder positions".to_owned(),
             "<s> → open sorting popup".to_owned(),
             "<q> → quit file explorer".to_owned(),
+            "<n> → create new file".to_owned(),
         ])
         .block(popup_block)
         .highlight_style(Style::new().red());
 
+        popup_area.height = list.len() as u16 + 2;
         frame.render_widget(Clear, popup_area);
         frame.render_widget(list, popup_area);
     }
