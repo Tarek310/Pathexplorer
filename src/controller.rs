@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::confirmation_popup::ConfirmationPopup;
 use crate::explorer_table::ExplorerTable;
 use crate::file_manager::FileManager;
 use crate::key_mapping_popup::KeyMappingPopup;
@@ -19,6 +20,7 @@ pub enum AppEvents {
     OpenKeyMappingPopupWindow,
     OpenTextFieldPopup,
     OpenNewFilePopup,
+    OpenConfirmationPopup,
     ClosePopUp,
 }
 
@@ -95,6 +97,12 @@ impl Controller {
                     AppEvents::OpenTextFieldPopup => {
                         let message = self.get_current_message();
                         self.popup_stack.push(Box::new(TextFieldPopup::new()));
+                        self.send_current_message(message);
+                        Ok(AppEvents::None)
+                    }
+                    AppEvents::OpenConfirmationPopup => {
+                        let message = self.get_current_message();
+                        self.popup_stack.push(Box::new(ConfirmationPopup::new()));
                         self.send_current_message(message);
                         Ok(AppEvents::None)
                     }

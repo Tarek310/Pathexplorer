@@ -1,4 +1,5 @@
 mod app;
+mod confirmation_popup;
 mod controller;
 mod explorer_table;
 mod file_manager;

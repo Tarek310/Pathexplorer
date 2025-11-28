@@ -17,6 +17,7 @@ impl App {
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        terminal.clear()?;
         while !self.exit {
             terminal.draw(|frame: &mut Frame<'_>| self.controller.draw(frame))?;
             match self.controller.handle_events() {

@@ -1,6 +1,6 @@
 use crate::controller::{AppEvents, State};
 use crate::file_manager::{FileManager, SortDir};
-use crate::message::{MessageReceiver, MessageSender};
+use crate::message::{Message, MessageReceiver, MessageSender};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::Frame;
 use ratatui::layout::Constraint;
@@ -9,14 +9,25 @@ use ratatui::symbols::border;
 use ratatui::widgets::{Block, Row, Table, TableState};
 use std::path::PathBuf;
 
+//this enum is used to know which part of the window requested the popup to properly handle the
+//message
+enum MessageSource {
+    None,
+    DeletionConfirmationPrompt,
+}
+
 pub struct ExplorerTable {
     table_state: TableState,
+    message_source: MessageSource,
+    message: Option<Message>,
 }
 
 impl ExplorerTable {
     pub fn new() -> ExplorerTable {
         let mut explorer_table = ExplorerTable {
             table_state: TableState::new(),
+            message_source: MessageSource::None,
+            message: None,
         };
         explorer_table.table_state.select_first_column();
         explorer_table.table_state.select_first();
@@ -37,8 +48,33 @@ impl ExplorerTable {
     }
 }
 
-impl MessageReceiver for ExplorerTable {}
-impl MessageSender for ExplorerTable {}
+impl MessageReceiver for ExplorerTable {
+    fn handle_message(
+        &mut self,
+        message: Option<Message>,
+        file_manager: &mut crate::file_manager::FileManager,
+    ) {
+        match self.message_source {
+            MessageSource::DeletionConfirmationPrompt => {
+                if let Some(Message::Bool(true)) = message {
+                    if let Some(path) = self.selected_file_in_table(file_manager) {
+                        if file_manager.delete(&path).is_ok() {
+                            file_manager.update();
+                        } else {
+                            todo!("handle deletion error")
+                        }
+                    }
+                }
+            }
+            MessageSource::None => {}
+        }
+    }
+}
+impl MessageSender for ExplorerTable {
+    fn get_message(&mut self) -> Option<Message> {
+        self.message.take()
+    }
+}
 
 impl State for ExplorerTable {
     fn enter(&mut self, file_manager: &mut FileManager) {
@@ -137,14 +173,11 @@ impl State for ExplorerTable {
                 Ok(_) => file_manager.update(),
             },
             KeyCode::Char('x') => {
-                let path = match self.selected_file_in_table(file_manager) {
-                    None => return AppEvents::None,
-                    Some(path) => path,
-                };
-                match file_manager.delete(&path) {
-                    Err(_e) => todo!(),
-                    Ok(_) => file_manager.update(),
-                };
+                self.message_source = MessageSource::DeletionConfirmationPrompt;
+                self.message = Some(Message::String(
+                    "The selected files will be deleted permanently, are you sure?".to_owned(),
+                ));
+                return AppEvents::OpenConfirmationPopup;
             }
             KeyCode::Char('h') => {
                 file_manager.show_hidden = !file_manager.show_hidden;
