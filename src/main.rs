@@ -1,15 +1,10 @@
 mod app;
-mod confirmation_popup;
 mod controller;
-mod explorer_table;
 mod file_manager;
-mod key_mapping_popup;
 mod message;
-mod new_file_popup;
-mod sorting_popup;
 mod test;
-mod text_field_popup;
 mod util;
+mod windows;
 
 use crate::app::App;
 use std::io;
