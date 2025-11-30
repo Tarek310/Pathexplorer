@@ -1,4 +1,7 @@
-use std::fs::{self, File};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
 
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -9,7 +12,7 @@ use ratatui::{
 
 use crate::{
     controller::{AppEvents, State},
-    file_manager::FileManager,
+    file_manager::{self, FileManager},
     message::{Message, MessageReceiver, MessageSender},
     util,
 };
@@ -36,16 +39,14 @@ impl MessageReceiver for NewFilePopup {
     ) {
         if let Some(Message::String(message)) = message {
             let index = self.list_state.selected().unwrap();
-            //TODO: move file/folder creation into file_manager
+            let path = PathBuf::from(message);
             match index {
-                0 => match File::create(&message) {
-                    Ok(_res) => {}
-                    Err(_e) => todo!(),
-                },
-                1 => match fs::create_dir(&message) {
-                    Ok(_res) => {}
-                    Err(_e) => todo!(),
-                },
+                0 => {
+                    let _ = file_manager.create_file(path);
+                }
+                1 => {
+                    let _ = file_manager.create_folder(path);
+                }
                 _ => {}
             }
         }

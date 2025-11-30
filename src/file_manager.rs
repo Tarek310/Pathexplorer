@@ -246,4 +246,19 @@ impl FileManager {
             None => Err(Error::new(ErrorKind::NotFound, "wrong index")),
         }
     }
+
+    pub fn create_file(&mut self, path: PathBuf) -> io::Result<()> {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::File::create(path)?;
+        self.update();
+        Ok(())
+    }
+
+    pub fn create_folder(&mut self, path: PathBuf) -> io::Result<()> {
+        fs::create_dir_all(path)?;
+        self.update();
+        Ok(())
+    }
 }
