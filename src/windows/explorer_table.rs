@@ -104,7 +104,7 @@ impl State for ExplorerTable {
                 file_manager.update();
                 return AppEvents::None;
             }
-            KeyCode::Down => {
+            KeyCode::Down | KeyCode::Char('j') => {
                 let selected = self.table_state.selected();
                 match selected {
                     None => self.table_state.select_last(),
@@ -117,7 +117,7 @@ impl State for ExplorerTable {
                     }
                 }
             }
-            KeyCode::Up => {
+            KeyCode::Up | KeyCode::Char('k') => {
                 let selected = self.table_state.selected();
                 match selected {
                     None => self.table_state.select_last(),
@@ -131,7 +131,7 @@ impl State for ExplorerTable {
                 }
             }
             //Enter selected Directory
-            KeyCode::Right => {
+            KeyCode::Right | KeyCode::Char('l') => {
                 let index = match self.table_state.selected() {
                     Some(index) => index,
                     None => return AppEvents::None,
@@ -145,7 +145,7 @@ impl State for ExplorerTable {
                 }
             }
             //Go to parent directory
-            KeyCode::Left => {
+            KeyCode::Left | KeyCode::Char('h') => {
                 file_manager.change_dir(PathBuf::from(".."));
                 if self.table_state.selected().is_none() {
                     self.table_state.select(Some(0));
@@ -181,7 +181,7 @@ impl State for ExplorerTable {
                 ));
                 return AppEvents::OpenConfirmationPopup;
             }
-            KeyCode::Char('h') => {
+            KeyCode::Char('g') => {
                 file_manager.show_hidden = !file_manager.show_hidden;
                 file_manager.update();
             }

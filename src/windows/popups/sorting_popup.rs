@@ -12,7 +12,10 @@ pub struct SortingPopUp {
 }
 
 impl SortingPopUp {
-    pub fn new(message: Option<crate::message::Message>, file_manager: &mut FileManager) -> SortingPopUp {
+    pub fn new(
+        message: Option<crate::message::Message>,
+        file_manager: &mut FileManager,
+    ) -> SortingPopUp {
         let mut popup = SortingPopUp {
             list_state: ListState::default(),
         };
@@ -44,8 +47,8 @@ impl State for SortingPopUp {
         file_manager: &mut FileManager,
     ) -> AppEvents {
         match key_event.code {
-            KeyCode::Up => self.list_state.select_previous(),
-            KeyCode::Down => self.list_state.select_next(),
+            KeyCode::Up | KeyCode::Char('k') => self.list_state.select_previous(),
+            KeyCode::Down | KeyCode::Char('j') => self.list_state.select_next(),
             KeyCode::Enter => match self.selected_sort_mode() {
                 None => return AppEvents::None,
                 Some(sorting) => {

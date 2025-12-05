@@ -72,8 +72,8 @@ impl State for NewFilePopup {
         _file_manager: &mut FileManager,
     ) -> AppEvents {
         match key_event.code {
-            KeyCode::Up => self.list_state.select_previous(),
-            KeyCode::Down => self.list_state.select_next(),
+            KeyCode::Up | KeyCode::Char('k') => self.list_state.select_previous(),
+            KeyCode::Down | KeyCode::Char('j') => self.list_state.select_next(),
             KeyCode::Esc => return AppEvents::ClosePopUp,
             KeyCode::Enter => return AppEvents::OpenTextFieldPopup,
             _ => {}

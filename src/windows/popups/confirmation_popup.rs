@@ -47,8 +47,8 @@ impl State for ConfirmationPopup {
                 return AppEvents::ClosePopUp;
             }
             KeyCode::Esc => return AppEvents::ClosePopUp,
-            KeyCode::Up => self.list_state.select(Some(0)),
-            KeyCode::Down => self.list_state.select(Some(1)),
+            KeyCode::Up | KeyCode::Char('k') => self.list_state.select(Some(0)),
+            KeyCode::Down | KeyCode::Char('j') => self.list_state.select(Some(1)),
             _ => {}
         }
         AppEvents::None
