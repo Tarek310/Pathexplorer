@@ -170,7 +170,14 @@ impl FileManager {
     ///paste the content of copy_buffer into the current directory!
     ///deep-copies directories
     pub fn paste(&mut self) -> io::Result<()> {
+        let current_dir = std::path::absolute(PathBuf::from("."))?;
+
         for src in &self.selection {
+            //check if src dir gets copied into itself
+            if src.is_dir() && current_dir.starts_with(src) {
+                continue;
+            }
+
             if src.is_file() {
                 fs::copy(
                     src,
