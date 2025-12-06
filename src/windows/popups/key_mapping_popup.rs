@@ -43,7 +43,7 @@ impl State for KeyMappingPopup {
             "<c> → clear selection".to_owned(),
             "<v> → paste selection".to_owned(),
             "<x> → delete selection".to_owned(),
-            "<y> → add to selection".to_owned(),
+            "<y> → toggle selection".to_owned(),
             "<g> → toggle hidden files".to_owned(),
             "<d> → change folder positions".to_owned(),
             "<s> → open sorting popup".to_owned(),
