@@ -152,13 +152,17 @@ impl State for ExplorerTable {
                 }
             }
 
-            //add file/folder to selection
+            //toggle file/folder selection
             KeyCode::Char('y') => {
                 let path = match self.selected_file_in_table(file_manager) {
                     None => return AppEvents::None,
                     Some(path) => path,
                 };
-                file_manager.add_to_selection(path);
+                if file_manager.is_selected(&path) {
+                    file_manager.remove_from_selection(path);
+                } else {
+                    file_manager.add_to_selection(path);
+                }
             }
 
             //clear selection
@@ -209,7 +213,9 @@ impl State for ExplorerTable {
                 row_strings.push("".to_string());
             }
             let mut row = Row::new(row_strings);
-            if entry.metadata().unwrap().is_dir() {
+            if file_manager.is_selected(&entry.path()) {
+                row = row.on_dark_gray();
+            } else if entry.metadata().unwrap().is_dir() {
                 row = row.blue();
             }
             rows.push(row);

@@ -1,7 +1,4 @@
-use std::{
-    fs::{self, File},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
@@ -12,7 +9,7 @@ use ratatui::{
 
 use crate::{
     controller::{AppEvents, State},
-    file_manager::{self, FileManager},
+    file_manager::FileManager,
     message::{Message, MessageReceiver, MessageSender},
     util,
 };

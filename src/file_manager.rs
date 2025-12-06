@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::fs::{DirEntry, create_dir};
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
@@ -25,7 +26,7 @@ pub struct FileManager {
     curr_sort: Sorting,
     pub show_hidden: bool,
     pub dir_sorting: SortDir,
-    selection: Vec<PathBuf>,
+    selection: HashSet<PathBuf>,
 }
 
 impl FileManager {
@@ -65,7 +66,7 @@ impl FileManager {
             curr_sort: Sorting::Unsorted,
             show_hidden: false,
             dir_sorting: SortDir::Unsorted,
-            selection: Vec::new(),
+            selection: HashSet::new(),
         };
         fm.change_dir(PathBuf::from("."));
         fm
@@ -137,11 +138,31 @@ impl FileManager {
         let full_path = std::path::absolute(pb);
         match full_path {
             Ok(full_path) => {
-                self.selection.push(full_path);
+                self.selection.insert(full_path);
             }
             Err(e) => {
                 panic!("{}", e.to_string());
             }
+        }
+    }
+
+    ///remove file from selection
+    pub fn remove_from_selection(&mut self, pb: PathBuf) {
+        let full_path = std::path::absolute(pb);
+        match full_path {
+            Ok(full_path) => {
+                self.selection.remove(&full_path);
+            }
+            Err(e) => {
+                panic!("{}", e.to_string());
+            }
+        }
+    }
+
+    pub fn is_selected(&self, path: &PathBuf) -> bool {
+        match std::path::absolute(path) {
+            Ok(full_path) => self.selection.contains(&full_path),
+            Err(_) => false,
         }
     }
 
