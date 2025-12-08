@@ -1,6 +1,7 @@
 pub enum Message {
     String(String),
     Bool(bool),
+    TwoStrings(String, String),
 }
 
 pub trait MessageSender {

@@ -14,6 +14,7 @@ use std::path::PathBuf;
 enum MessageSource {
     None,
     DeletionConfirmationPrompt,
+    PathChangePopup,
 }
 
 pub struct ExplorerTable {
@@ -61,6 +62,22 @@ impl MessageReceiver for ExplorerTable {
                         todo!("handle deletion error")
                     }
                 }
+            }
+            MessageSource::PathChangePopup => {
+                if let Some(Message::String(path_string)) = message {
+                    // Convert string to PathBuf
+                    let new_path = PathBuf::from(path_string);
+
+                    // Change directory
+                    file_manager.change_dir(new_path);
+
+                    // Reset selection if needed
+                    if self.table_state.selected().is_none() {
+                        self.table_state.select(Some(0));
+                    }
+                }
+                // Reset message source
+                self.message_source = MessageSource::None;
             }
             MessageSource::None => {}
         }
@@ -188,6 +205,22 @@ impl State for ExplorerTable {
             KeyCode::Char('g') => {
                 file_manager.show_hidden = !file_manager.show_hidden;
                 file_manager.update();
+            }
+            KeyCode::Tab => {
+                // Get current directory path
+                let current_path = match file_manager.current_dir() {
+                    Ok(path) => path.into_os_string().into_string().unwrap_or_default(),
+                    Err(_) => String::from(""),
+                };
+
+                // Set message source and message
+                self.message_source = MessageSource::PathChangePopup;
+                self.message = Some(Message::TwoStrings(
+                    String::from("Change Path"),
+                    current_path,
+                ));
+
+                return AppEvents::OpenTextFieldPopup;
             }
 
             _ => {}
