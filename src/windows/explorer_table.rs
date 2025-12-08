@@ -3,10 +3,10 @@ use crate::file_manager::{FileManager, SortDir};
 use crate::message::{Message, MessageReceiver, MessageSender};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::Frame;
-use ratatui::layout::Constraint;
+use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::symbols::border;
-use ratatui::widgets::{Block, Row, Table, TableState};
+use ratatui::widgets::{Block, Paragraph, Row, Table, TableState, Wrap};
 use std::path::PathBuf;
 
 //this enum is used to know which part of the window requested the popup to properly handle the
@@ -198,10 +198,33 @@ impl State for ExplorerTable {
     fn draw(&mut self, frame: &mut Frame, file_manager: &mut FileManager) {
         let title = Line::from("FILE EXPLORER").bold();
         let help_text = Line::from("Key Mappings:<m>");
-        let block = Block::bordered()
+        let table_block = Block::bordered()
             .title(title.left_aligned().bold())
             .border_set(border::THICK)
             .title_bottom(help_text.right_aligned().bold());
+
+        let path_block = Block::bordered().title("PATH").border_set(border::THICK);
+
+        let layout =
+            Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
+
+        let path_area = layout[0];
+        let table_area = layout[1];
+
+        let inner_path_area = path_block.inner(path_area);
+
+        //write path to path_area
+        let path = file_manager
+            .current_dir()
+            .unwrap_or_default()
+            .into_os_string()
+            .into_string()
+            .unwrap_or_default();
+
+        let text_paragraph = Paragraph::new(path).left_aligned().wrap(Wrap {
+            ..Default::default()
+        });
+
         let mut rows: Vec<Row> = Vec::new();
         let header = Row::new(vec!["FILENAME", "SIZE"]).bold().dark_gray();
         for entry in file_manager.get_entries() {
@@ -223,10 +246,12 @@ impl State for ExplorerTable {
         let widths = [Constraint::Percentage(20), Constraint::Percentage(20)];
 
         let table = Table::new(rows, widths)
-            .block(block)
+            .block(table_block)
             .header(header)
             .cell_highlight_style(Style::new().green());
 
-        frame.render_stateful_widget(table, frame.area(), &mut self.table_state);
+        frame.render_stateful_widget(table, table_area, &mut self.table_state);
+        frame.render_widget(text_paragraph, inner_path_area);
+        frame.render_widget(path_block, path_area);
     }
 }
