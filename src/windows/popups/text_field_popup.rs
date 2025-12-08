@@ -8,7 +8,7 @@ use crate::{
 };
 
 ///This popup is for retrieving a String from the user.
-///The controller will pass the message to the window that requested this popup
+///The controller will pass the message to the window that requested this popup.
 pub struct TextFieldPopup {
     title: String,
     string: String,
@@ -29,8 +29,15 @@ impl TextFieldPopup {
 
 impl MessageReceiver for TextFieldPopup {
     fn handle_message(&mut self, message: Option<Message>, _file_manager: &mut FileManager) {
-        if let Some(Message::String(message)) = message {
-            self.title = message;
+        match message {
+            Some(Message::String(message)) => {
+                self.title = message;
+            }
+            Some(Message::TwoStrings(title, pre_filled_text)) => {
+                self.title = title;
+                self.string = pre_filled_text;
+            }
+            _ => {}
         }
     }
 }
