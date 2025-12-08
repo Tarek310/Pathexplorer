@@ -52,6 +52,10 @@ impl FileManager {
         self.sort(self.curr_sort);
     }
 
+    pub fn current_dir(&self) -> io::Result<PathBuf> {
+        std::env::current_dir()
+    }
+
     ///update file_manager for current directory!
     pub fn update(&mut self) {
         self.change_dir(PathBuf::from("."));
@@ -168,8 +172,8 @@ impl FileManager {
 
     pub fn delete_selection(&mut self) -> io::Result<()> {
         let selection_clone = self.selection.clone();
-        for dest in &selection_clone {
-            self.delete(&dest.clone())?;
+        for dest in selection_clone {
+            self.delete(&dest)?;
         }
         self.selection.clear();
         self.update();
