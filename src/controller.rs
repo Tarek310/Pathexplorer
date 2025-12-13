@@ -82,7 +82,8 @@ impl Controller {
                     AppEvents::None => Ok(AppEvents::None),
                     AppEvents::Exit => Ok(AppEvents::Exit),
                     AppEvents::OpenSortingPopupWindow => {
-                        self.popup_stack.push(Box::new(SortingPopUp::new(None, &mut self.file_manager)));
+                        self.popup_stack
+                            .push(Box::new(SortingPopUp::new(None, &mut self.file_manager)));
                         Ok(AppEvents::None)
                     }
                     AppEvents::ChangeToExplorerWindow => {
@@ -95,17 +96,24 @@ impl Controller {
                     }
                     AppEvents::OpenTextFieldPopup => {
                         let message = self.get_current_message();
-                        self.popup_stack.push(Box::new(TextFieldPopup::new(message, &mut self.file_manager)));
+                        self.popup_stack.push(Box::new(TextFieldPopup::new(
+                            message,
+                            &mut self.file_manager,
+                        )));
                         Ok(AppEvents::None)
                     }
                     AppEvents::OpenConfirmationPopup => {
                         let message = self.get_current_message();
-                        self.popup_stack.push(Box::new(ConfirmationPopup::new(message, &mut self.file_manager)));
+                        self.popup_stack.push(Box::new(ConfirmationPopup::new(
+                            message,
+                            &mut self.file_manager,
+                        )));
                         Ok(AppEvents::None)
                     }
 
                     AppEvents::OpenNewFilePopup => {
-                        self.popup_stack.push(Box::new(NewFilePopup::new(None, &mut self.file_manager)));
+                        self.popup_stack
+                            .push(Box::new(NewFilePopup::new(None, &mut self.file_manager)));
                         Ok(AppEvents::None)
                     }
 

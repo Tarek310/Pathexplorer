@@ -32,24 +32,28 @@ pub struct FileManager {
 impl FileManager {
     /// changes the content of the FileManager to the Files of the new path
     /// This method might panic!
-    pub fn change_dir(&mut self, path_buf: PathBuf) {
+    pub fn change_dir(&mut self, path_buf: PathBuf) -> io::Result<()> {
         let p: &Path = PathBuf::as_path(&path_buf);
-        let res = std::env::set_current_dir(p);
-        if res.is_err() {
-            return;
-        }
 
-        let entry_iter = fs::read_dir(Path::new(".")).unwrap();
+        let entry_iter = fs::read_dir(p)?;
+        std::env::set_current_dir(p)?;
+
         self.files.clear();
         self.num_files = 0;
-        for entry_res in entry_iter {
-            let entry = entry_res.unwrap();
-            if self.show_hidden || !entry.file_name().to_str().unwrap().starts_with(".") {
+        for entry in entry_iter.flatten() {
+            if self.show_hidden
+                || !entry
+                    .file_name()
+                    .to_str()
+                    .unwrap_or_default()
+                    .starts_with(".")
+            {
                 self.files.push(entry);
                 self.num_files += 1;
             }
         }
         self.sort(self.curr_sort);
+        Ok(())
     }
 
     pub fn current_dir(&self) -> io::Result<PathBuf> {
@@ -58,7 +62,7 @@ impl FileManager {
 
     ///update file_manager for current directory!
     pub fn update(&mut self) {
-        self.change_dir(PathBuf::from("."));
+        let _ = self.change_dir(PathBuf::from("."));
     }
 
     ///creates and initializes a FileManager-struct
@@ -72,7 +76,7 @@ impl FileManager {
             dir_sorting: SortDir::Unsorted,
             selection: HashSet::new(),
         };
-        fm.change_dir(PathBuf::from("."));
+        let _ = fm.change_dir(PathBuf::from("."));
         fm
     }
 
