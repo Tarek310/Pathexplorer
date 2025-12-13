@@ -124,9 +124,9 @@ impl FileManager {
     }
 
     fn sort_dir_to_start(entry1: &DirEntry, entry2: &DirEntry) -> Ordering {
-        if entry1.file_type().unwrap().is_dir() {
+        if entry1.file_type().map(|e| e.is_dir()).unwrap_or(false) {
             Ordering::Less
-        } else if entry2.file_type().unwrap().is_dir() {
+        } else if entry2.file_type().map(|e| e.is_dir()).unwrap_or(false) {
             Ordering::Greater
         } else {
             Ordering::Equal
