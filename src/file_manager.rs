@@ -84,28 +84,24 @@ impl FileManager {
         match sort_mode {
             //TODO!!!!!!!
             Sorting::SortedBySizeDescending => self.files.sort_by(|b, a| {
-                a.metadata()
-                    .unwrap()
-                    .len()
-                    .cmp(&b.metadata().unwrap().len())
+                let a_meta = a.metadata().map(|m| m.len()).unwrap_or_default();
+                let b_meta = b.metadata().map(|m| m.len()).unwrap_or_default();
+                a_meta.cmp(&b_meta)
             }),
             Sorting::SortedBySizeAscending => self.files.sort_by(|a, b| {
-                a.metadata()
-                    .unwrap()
-                    .len()
-                    .cmp(&b.metadata().unwrap().len())
+                let a_meta = a.metadata().map(|m| m.len()).unwrap_or_default();
+                let b_meta = b.metadata().map(|m| m.len()).unwrap_or_default();
+                a_meta.cmp(&b_meta)
             }),
             Sorting::SortedByNameDescending => self.files.sort_by(|b, a| {
-                a.file_name()
-                    .into_string()
-                    .unwrap()
-                    .cmp(&b.file_name().into_string().unwrap())
+                let a_string = a.file_name().into_string().unwrap_or_default();
+                let b_string = b.file_name().into_string().unwrap_or_default();
+                a_string.cmp(&b_string)
             }),
             Sorting::SortedByNameAscending => self.files.sort_by(|a, b: &DirEntry| {
-                a.file_name()
-                    .into_string()
-                    .unwrap()
-                    .cmp(&b.file_name().into_string().unwrap())
+                let a_string = a.file_name().into_string().unwrap_or_default();
+                let b_string = b.file_name().into_string().unwrap_or_default();
+                a_string.cmp(&b_string)
             }),
             _ => {}
         };
