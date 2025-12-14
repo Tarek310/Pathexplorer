@@ -2,6 +2,7 @@ mod app;
 mod controller;
 mod file_manager;
 mod message;
+mod string_ring_buffer;
 mod test;
 mod util;
 mod windows;
