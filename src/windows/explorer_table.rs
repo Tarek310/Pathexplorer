@@ -2,7 +2,7 @@ use crate::controller::{AppEvents, State};
 use crate::file_manager::{FileManager, SortDir};
 use crate::message::{Message, MessageReceiver, MessageSender};
 use crate::string_ring_buffer::StringRingBuffer;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Line, Style, Stylize};

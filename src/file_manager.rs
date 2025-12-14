@@ -118,7 +118,7 @@ impl FileManager {
         match self.dir_sorting {
             SortDir::Start => {
                 self.files
-                    .sort_by(|a, b| FileManager::sort_dir_to_start(a, b));
+                    .sort_by(FileManager::sort_dir_to_start);
             }
             SortDir::End => {
                 self.files
