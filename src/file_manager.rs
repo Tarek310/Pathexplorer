@@ -37,8 +37,8 @@ impl FileManager {
     pub fn change_dir(&mut self, path_buf: PathBuf) -> io::Result<()> {
         let p: &Path = PathBuf::as_path(&path_buf);
 
-        let entry_iter = fs::read_dir(p)?;
         std::env::set_current_dir(p)?;
+        let entry_iter = fs::read_dir(".")?;
 
         self.files.clear();
         self.num_files = 0;
@@ -64,7 +64,9 @@ impl FileManager {
 
     ///update file_manager for current directory!
     pub fn update(&mut self) {
-        let _ = self.change_dir(PathBuf::from("."));
+        if let Err(e) = self.change_dir(PathBuf::from(".")) {
+            self.push_error(e);
+        }
     }
 
     ///creates and initializes a FileManager-struct
@@ -196,33 +198,74 @@ impl FileManager {
 
     ///paste the content of copy_buffer into the current directory!
     ///deep-copies directories
-    pub fn paste(&mut self) -> io::Result<()> {
-        let current_dir = std::path::absolute(PathBuf::from("."))?;
+    pub fn paste(&mut self) {
+        let current_dir = match std::path::absolute(PathBuf::from(".")) {
+            Ok(dir) => dir,
+            Err(e) => {
+                self.push_error(e);
+                return;
+            }
+        };
 
-        for src in &self.selection {
+        let selection = self.selection.clone();
+        for src in &selection {
             //check if src dir gets copied into itself
             if src.is_dir() && current_dir.starts_with(src) {
                 continue;
             }
 
             if src.is_file() {
-                fs::copy(
-                    src,
-                    PathBuf::from(src.file_name().unwrap().to_str().unwrap()),
-                )?;
+                let file_name = match src.file_name() {
+                    Some(name) => name,
+                    None => {
+                        self.push_error(Error::new(
+                            ErrorKind::InvalidInput,
+                            format!("Invalid filename: {}", src.display()),
+                        ));
+                        continue;
+                    }
+                };
+                let file_name_str = match file_name.to_str() {
+                    Some(s) => s,
+                    None => {
+                        self.push_error(Error::new(
+                            ErrorKind::InvalidInput,
+                            format!("Invalid filename: {}", src.display()),
+                        ));
+                        continue;
+                    }
+                };
+                if let Err(e) = fs::copy(src, PathBuf::from(file_name_str)) {
+                    self.push_error(e);
+                }
             }
             //copying the directory and recursively copy it's content into the new directory
             else if src.is_dir() {
                 let src_folder_name = match src.file_name() {
-                    None => todo!(),
                     Some(name) => match name.to_str() {
-                        None => todo!(),
                         Some(name_str) => name_str,
+                        None => {
+                            self.push_error(Error::new(
+                                ErrorKind::InvalidInput,
+                                format!("Invalid directory name: {}", src.display()),
+                            ));
+                            continue;
+                        }
                     },
+                    None => {
+                        self.push_error(Error::new(
+                            ErrorKind::InvalidInput,
+                            format!("Invalid directory name: {}", src.display()),
+                        ));
+                        continue;
+                    }
                 };
 
                 let dest_folder = PathBuf::from(src_folder_name);
-                create_dir(&dest_folder)?;
+                if let Err(e) = create_dir(&dest_folder) {
+                    self.push_error(e);
+                    continue;
+                }
 
                 let mut stack: Vec<PathBuf> = Vec::new(); //contains relative paths within the source directory
                 stack.push(PathBuf::from(".")); //start with the root of the source directory
@@ -234,16 +277,28 @@ impl FileManager {
                     };
 
                     let current_src_path = src.join(&current_relative_path);
-                    let entry_iter = fs::read_dir(&current_src_path)?;
+                    let entry_iter = match fs::read_dir(&current_src_path) {
+                        Ok(iter) => iter,
+                        Err(e) => {
+                            self.push_error(e);
+                            continue;
+                        }
+                    };
 
                     for entry_res in entry_iter {
                         let entry = match entry_res {
-                            Err(_e) => continue,
                             Ok(entry) => entry,
+                            Err(e) => {
+                                self.push_error(e);
+                                continue;
+                            }
                         };
                         let file_type = match entry.file_type() {
-                            Err(_e) => continue,
                             Ok(file_type) => file_type,
+                            Err(e) => {
+                                self.push_error(e);
+                                continue;
+                            }
                         };
 
                         let relative_entry_path = current_relative_path.join(entry.file_name());
@@ -251,31 +306,47 @@ impl FileManager {
                         let dest_entry = dest_folder.join(&relative_entry_path);
 
                         if file_type.is_dir() {
-                            create_dir(&dest_entry)?;
+                            if let Err(e) = create_dir(&dest_entry) {
+                                self.push_error(e);
+                                continue;
+                            }
                             stack.push(relative_entry_path);
                         } else if file_type.is_file() {
-                            fs::copy(src_entry, dest_entry)?;
+                            if let Err(e) = fs::copy(src_entry, dest_entry) {
+                                self.push_error(e);
+                            }
                         } else if file_type.is_symlink() {
-                            let link_target = fs::read_link(&src_entry)?;
+                            let link_target = match fs::read_link(&src_entry) {
+                                Ok(target) => target,
+                                Err(e) => {
+                                    self.push_error(e);
+                                    continue;
+                                }
+                            };
                             #[cfg(unix)]
-                            std::os::unix::fs::symlink(link_target, dest_entry)?;
-                            #[cfg(windows)]
                             {
-                                if src_entry.is_dir() {
-                                    std::os::windows::fs::symlink_dir(link_target, dest_entry)?;
-                                } else {
-                                    std::os::windows::fs::symlink_file(link_target, dest_entry)?;
+                                if let Err(e) = std::os::unix::fs::symlink(link_target, dest_entry)
+                                {
+                                    self.push_error(e);
                                 }
                             }
-                        } else {
-                            panic!();
+                            #[cfg(windows)]
+                            {
+                                let result = if src_entry.is_dir() {
+                                    std::os::windows::fs::symlink_dir(link_target, dest_entry)
+                                } else {
+                                    std::os::windows::fs::symlink_file(link_target, dest_entry)
+                                };
+                                if let Err(e) = result {
+                                    self.push_error(e);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
         self.update();
-        Ok(())
     }
 
     pub fn get_entry_at_index(&self, index: usize) -> Result<&DirEntry, Error> {
@@ -307,5 +378,11 @@ impl FileManager {
 
     fn push_error(&mut self, error: io::Error) {
         self.error_queue.push(error);
+    }
+
+    pub fn change_dir_with_error_handling(&mut self, path_buf: PathBuf) {
+        if let Err(e) = self.change_dir(path_buf) {
+            self.push_error(e);
+        }
     }
 }

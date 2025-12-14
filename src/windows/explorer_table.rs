@@ -1,13 +1,13 @@
 use crate::controller::{AppEvents, State};
 use crate::file_manager::{FileManager, SortDir};
 use crate::message::{Message, MessageReceiver, MessageSender};
+use crate::string_ring_buffer::StringRingBuffer;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::symbols::border;
 use ratatui::widgets::{Block, Paragraph, Row, Table, TableState, Wrap};
-use std::collections::VecDeque;
 use std::path::PathBuf;
 
 //this enum is used to know which part of the window requested the popup to properly handle the
@@ -23,7 +23,7 @@ pub struct ExplorerTable {
     message_source: MessageSource,
     message: Option<Message>,
 
-    error_ring_buffer: String,
+    error_ring_buffer: StringRingBuffer,
 }
 
 impl ExplorerTable {
@@ -33,7 +33,7 @@ impl ExplorerTable {
             message_source: MessageSource::None,
             message: None,
 
-            error_ring_buffer: String::with_capacity(200),
+            error_ring_buffer: StringRingBuffer::with_capacity(20),
         };
         explorer_table.table_state.select_first_column();
         explorer_table.table_state.select_first();
@@ -68,18 +68,14 @@ impl MessageReceiver for ExplorerTable {
             }
             MessageSource::PathChangePopup => {
                 if let Some(Message::String(path_string)) = message {
-                    // Convert string to PathBuf
                     let new_path = PathBuf::from(path_string);
 
-                    // Change directory
-                    file_manager.change_dir(new_path);
+                    file_manager.change_dir_with_error_handling(new_path);
 
-                    // Reset selection if needed
                     if self.table_state.selected().is_none() {
                         self.table_state.select(Some(0));
                     }
                 }
-                // Reset message source
                 self.message_source = MessageSource::None;
             }
             MessageSource::None => {}
@@ -158,7 +154,7 @@ impl State for ExplorerTable {
                 };
                 let entry = file_manager.get_entries().get(index).unwrap();
                 if entry.metadata().unwrap().is_dir() {
-                    file_manager.change_dir(entry.path());
+                    file_manager.change_dir_with_error_handling(entry.path());
                     if self.table_state.selected().is_none() {
                         self.table_state.select(Some(0));
                     }
@@ -166,7 +162,7 @@ impl State for ExplorerTable {
             }
             //Go to parent directory
             KeyCode::Left | KeyCode::Char('h') => {
-                file_manager.change_dir(PathBuf::from(".."));
+                file_manager.change_dir_with_error_handling(PathBuf::from(".."));
                 if self.table_state.selected().is_none() {
                     self.table_state.select(Some(0));
                 }
@@ -190,12 +186,10 @@ impl State for ExplorerTable {
                 file_manager.clear_selection();
             }
             //paste selection
-            KeyCode::Char('v') => match file_manager.paste() {
-                Err(_e) => return AppEvents::None,
-                Ok(_) => {
-                    file_manager.clear_selection();
-                }
-            },
+            KeyCode::Char('v') => {
+                file_manager.paste();
+                file_manager.clear_selection();
+            }
 
             //delete selection
             KeyCode::Char('x') => {
@@ -232,6 +226,11 @@ impl State for ExplorerTable {
     }
 
     fn draw(&mut self, frame: &mut Frame, file_manager: &mut FileManager) {
+        // Update error log
+        for x in file_manager.take_errors() {
+            self.error_ring_buffer.push(x.to_string());
+        }
+
         let title = Line::from("FILE EXPLORER").bold();
         let help_text = Line::from("Key Mappings:<m>");
         let table_block = Block::bordered()
@@ -240,6 +239,9 @@ impl State for ExplorerTable {
             .title_bottom(help_text.right_aligned().bold());
 
         let path_block = Block::bordered().title("PATH").border_set(border::THICK);
+        let error_log_block = Block::bordered()
+            .title("ERROR LOG")
+            .border_set(border::THICK);
 
         let horizontal_layout =
             Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
@@ -255,6 +257,11 @@ impl State for ExplorerTable {
         let error_area = vertical_layout[1];
 
         let inner_path_area = path_block.inner(path_area);
+        let inner_error_area = error_log_block.inner(error_area);
+
+        let error_log_paragraph = Paragraph::new(self.error_ring_buffer.to_string()).wrap(Wrap {
+            ..Default::default()
+        });
 
         //write path to path_area
         let path = file_manager
@@ -294,8 +301,9 @@ impl State for ExplorerTable {
             .cell_highlight_style(Style::new().green());
 
         frame.render_stateful_widget(table, table_area, &mut self.table_state);
-        frame.render_widget(error_log, error_area);
+        frame.render_widget(error_log_paragraph, inner_error_area);
         frame.render_widget(text_paragraph, inner_path_area);
+        frame.render_widget(error_log_block, error_area);
         frame.render_widget(path_block, path_area);
     }
 }

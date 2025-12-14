@@ -1,8 +1,10 @@
+use core::fmt;
 use std::{collections::VecDeque, usize};
 
 pub struct StringRingBuffer {
     buffer: VecDeque<String>,
     capacity: usize,
+    error_count: usize,
 }
 
 impl StringRingBuffer {
@@ -10,6 +12,7 @@ impl StringRingBuffer {
         StringRingBuffer {
             buffer: VecDeque::with_capacity(capacity),
             capacity,
+            error_count: 0,
         }
     }
 
@@ -17,19 +20,26 @@ impl StringRingBuffer {
         if self.buffer.len() >= self.capacity {
             self.buffer.pop_front();
         }
-        self.buffer.push_back(s);
+        self.error_count += 1;
+        self.buffer
+            .push_back(format!("[ERROR {}]: {}", self.error_count, s));
     }
 
     pub fn clear(&mut self) {
         self.buffer.clear();
     }
-
-    pub fn to_string(&mut self) -> String {
-        self.buffer
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<_>>()
-            .join("\n")
+}
+impl fmt::Display for StringRingBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.buffer
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
     }
 }
 
