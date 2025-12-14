@@ -27,6 +27,8 @@ pub struct FileManager {
     pub show_hidden: bool,
     pub dir_sorting: SortDir,
     selection: HashSet<PathBuf>,
+
+    error_queue: Vec<io::Error>,
 }
 
 impl FileManager {
@@ -75,6 +77,7 @@ impl FileManager {
             show_hidden: false,
             dir_sorting: SortDir::Unsorted,
             selection: HashSet::new(),
+            error_queue: Vec::new(),
         };
         let _ = fm.change_dir(PathBuf::from("."));
         fm
@@ -139,26 +142,24 @@ impl FileManager {
 
     ///add file to selection
     pub fn add_to_selection(&mut self, pb: PathBuf) {
-        let full_path = std::path::absolute(pb);
-        match full_path {
+        match std::path::absolute(pb) {
             Ok(full_path) => {
                 self.selection.insert(full_path);
             }
             Err(e) => {
-                panic!("{}", e.to_string());
+                self.push_error(e);
             }
         }
     }
 
     ///remove file from selection
     pub fn remove_from_selection(&mut self, pb: PathBuf) {
-        let full_path = std::path::absolute(pb);
-        match full_path {
+        match std::path::absolute(pb) {
             Ok(full_path) => {
                 self.selection.remove(&full_path);
             }
             Err(e) => {
-                panic!("{}", e.to_string());
+                self.push_error(e);
             }
         }
     }
@@ -170,14 +171,15 @@ impl FileManager {
         }
     }
 
-    pub fn delete_selection(&mut self) -> io::Result<()> {
+    pub fn delete_selection(&mut self) {
         let selection_clone = self.selection.clone();
         for dest in selection_clone {
-            self.delete(&dest)?;
+            if let Err(e) = self.delete(&dest) {
+                self.push_error(e);
+            }
         }
         self.selection.clear();
         self.update();
-        Ok(())
     }
 
     pub fn delete(&mut self, dest: &PathBuf) -> io::Result<()> {
@@ -297,5 +299,13 @@ impl FileManager {
         fs::create_dir_all(path)?;
         self.update();
         Ok(())
+    }
+
+    pub fn take_errors(&mut self) -> Vec<io::Error> {
+        std::mem::take(&mut self.error_queue)
+    }
+
+    fn push_error(&mut self, error: io::Error) {
+        self.error_queue.push(error);
     }
 }

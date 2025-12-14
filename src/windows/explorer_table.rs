@@ -7,6 +7,7 @@ use ratatui::layout::{Constraint, Layout};
 use ratatui::prelude::{Line, Style, Stylize};
 use ratatui::symbols::border;
 use ratatui::widgets::{Block, Paragraph, Row, Table, TableState, Wrap};
+use std::collections::VecDeque;
 use std::path::PathBuf;
 
 //this enum is used to know which part of the window requested the popup to properly handle the
@@ -21,6 +22,8 @@ pub struct ExplorerTable {
     table_state: TableState,
     message_source: MessageSource,
     message: Option<Message>,
+
+    error_ring_buffer: String,
 }
 
 impl ExplorerTable {
@@ -29,6 +32,8 @@ impl ExplorerTable {
             table_state: TableState::new(),
             message_source: MessageSource::None,
             message: None,
+
+            error_ring_buffer: String::with_capacity(200),
         };
         explorer_table.table_state.select_first_column();
         explorer_table.table_state.select_first();
@@ -58,9 +63,7 @@ impl MessageReceiver for ExplorerTable {
         match self.message_source {
             MessageSource::DeletionConfirmationPrompt => {
                 if let Some(Message::Bool(true)) = message {
-                    if file_manager.delete_selection().is_err() {
-                        todo!("handle deletion error")
-                    }
+                    file_manager.delete_selection();
                 }
             }
             MessageSource::PathChangePopup => {
@@ -238,11 +241,18 @@ impl State for ExplorerTable {
 
         let path_block = Block::bordered().title("PATH").border_set(border::THICK);
 
-        let layout =
+        let horizontal_layout =
             Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
 
-        let path_area = layout[0];
-        let table_area = layout[1];
+        let path_area = horizontal_layout[0];
+        let main_area = horizontal_layout[1];
+
+        let vertical_layout =
+            Layout::horizontal([Constraint::Percentage(70), Constraint::Percentage(30)])
+                .split(main_area);
+
+        let table_area = vertical_layout[0];
+        let error_area = vertical_layout[1];
 
         let inner_path_area = path_block.inner(path_area);
 
@@ -284,6 +294,7 @@ impl State for ExplorerTable {
             .cell_highlight_style(Style::new().green());
 
         frame.render_stateful_widget(table, table_area, &mut self.table_state);
+        frame.render_widget(error_log, error_area);
         frame.render_widget(text_paragraph, inner_path_area);
         frame.render_widget(path_block, path_area);
     }
