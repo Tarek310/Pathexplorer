@@ -117,8 +117,7 @@ impl FileManager {
         self.curr_sort = sort_mode;
         match self.dir_sorting {
             SortDir::Start => {
-                self.files
-                    .sort_by(FileManager::sort_dir_to_start);
+                self.files.sort_by(FileManager::sort_dir_to_start);
             }
             SortDir::End => {
                 self.files
@@ -357,19 +356,23 @@ impl FileManager {
         }
     }
 
-    pub fn create_file(&mut self, path: PathBuf) -> io::Result<()> {
+    pub fn create_file(&mut self, path: PathBuf) {
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
+            if let Err(e) = fs::create_dir_all(parent) {
+                self.push_error(e);
+            }
         }
-        fs::File::create(path)?;
+        if let Err(e) = fs::File::create(path) {
+            self.push_error(e);
+        }
         self.update();
-        Ok(())
     }
 
-    pub fn create_folder(&mut self, path: PathBuf) -> io::Result<()> {
-        fs::create_dir_all(path)?;
+    pub fn create_folder(&mut self, path: PathBuf) {
+        if let Err(e) = fs::create_dir_all(path) {
+            self.push_error(e);
+        }
         self.update();
-        Ok(())
     }
 
     pub fn take_errors(&mut self) -> Vec<io::Error> {

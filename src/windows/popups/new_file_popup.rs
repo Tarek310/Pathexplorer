@@ -40,10 +40,10 @@ impl MessageReceiver for NewFilePopup {
             let path = PathBuf::from(message);
             match index {
                 0 => {
-                    let _ = file_manager.create_file(path);
+                    file_manager.create_file(path);
                 }
                 1 => {
-                    let _ = file_manager.create_folder(path);
+                    file_manager.create_folder(path);
                 }
                 _ => {}
             }
