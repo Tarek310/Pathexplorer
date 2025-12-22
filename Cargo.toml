@@ -1,5 +1,5 @@
 [package]
-name = "file_explorer"
+name = "pathexplorer"
 version = "0.1.0"
 edition = "2024"
 
