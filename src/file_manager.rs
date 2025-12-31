@@ -69,6 +69,15 @@ impl FileManager {
         std::env::current_dir()
     }
 
+    /// open file with system default program or change directory if path is a directory
+    pub fn open_path(&mut self, path: &Path) {
+        if path.is_dir() {
+            self.change_dir(path.to_path_buf());
+        } else if let Err(e) = open::that_detached(path) {
+            self.push_error(e);
+        }
+    }
+
     ///update file_manager for current directory!
     pub fn update(&mut self) {
         self.change_dir(PathBuf::from("."))
