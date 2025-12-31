@@ -153,12 +153,7 @@ impl State for ExplorerTable {
                     None => return AppEvents::None,
                 };
                 let entry = file_manager.get_entries().get(index).unwrap();
-                if entry.metadata().unwrap().is_dir() {
-                    file_manager.change_dir_with_error_handling(entry.path());
-                    if self.table_state.selected().is_none() {
-                        self.table_state.select(Some(0));
-                    }
-                }
+                file_manager.change_dir_with_error_handling(entry.path());
             }
             //Go to parent directory
             KeyCode::Left | KeyCode::Char('h') => {
@@ -224,9 +219,7 @@ impl State for ExplorerTable {
                     None => return AppEvents::None,
                     Some(path) => path,
                 };
-                if path.is_dir() {
-                    file_manager.change_dir(path);
-                }
+                file_manager.open_path(&path);
             }
 
             _ => {}
