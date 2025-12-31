@@ -33,29 +33,36 @@ pub struct FileManager {
 
 impl FileManager {
     /// changes the content of the FileManager to the Files of the new path
-    /// This method might panic!
-    pub fn change_dir(&mut self, path_buf: PathBuf) -> io::Result<()> {
+    pub fn change_dir(&mut self, path_buf: PathBuf) {
         let p: &Path = PathBuf::as_path(&path_buf);
 
-        std::env::set_current_dir(p)?;
-        let entry_iter = fs::read_dir(".")?;
+        if let Err(e) = std::env::set_current_dir(p) {
+            self.push_error(e);
+            return;
+        }
 
-        self.files.clear();
-        self.num_files = 0;
-        for entry in entry_iter.flatten() {
-            if self.show_hidden
-                || !entry
-                    .file_name()
-                    .to_str()
-                    .unwrap_or_default()
-                    .starts_with(".")
-            {
-                self.files.push(entry);
-                self.num_files += 1;
+        match fs::read_dir(".") {
+            Ok(entry_iter) => {
+                self.files.clear();
+                self.num_files = 0;
+                for entry in entry_iter.flatten() {
+                    if self.show_hidden
+                        || !entry
+                            .file_name()
+                            .to_str()
+                            .unwrap_or_default()
+                            .starts_with(".")
+                    {
+                        self.files.push(entry);
+                        self.num_files += 1;
+                    }
+                }
+                self.sort(self.curr_sort);
+            }
+            Err(e) => {
+                self.push_error(e);
             }
         }
-        self.sort(self.curr_sort);
-        Ok(())
     }
 
     pub fn current_dir(&self) -> io::Result<PathBuf> {
@@ -64,9 +71,7 @@ impl FileManager {
 
     ///update file_manager for current directory!
     pub fn update(&mut self) {
-        if let Err(e) = self.change_dir(PathBuf::from(".")) {
-            self.push_error(e);
-        }
+        self.change_dir(PathBuf::from("."))
     }
 
     ///creates and initializes a FileManager-struct
@@ -81,7 +86,7 @@ impl FileManager {
             selection: HashSet::new(),
             error_queue: Vec::new(),
         };
-        let _ = fm.change_dir(PathBuf::from("."));
+        fm.change_dir(PathBuf::from("."));
         fm
     }
 
@@ -384,8 +389,6 @@ impl FileManager {
     }
 
     pub fn change_dir_with_error_handling(&mut self, path_buf: PathBuf) {
-        if let Err(e) = self.change_dir(path_buf) {
-            self.push_error(e);
-        }
+        self.change_dir(path_buf);
     }
 }

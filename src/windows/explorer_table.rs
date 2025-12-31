@@ -219,6 +219,15 @@ impl State for ExplorerTable {
 
                 return AppEvents::OpenTextFieldPopup;
             }
+            KeyCode::Enter => {
+                let path = match self.selected_file_in_table(file_manager) {
+                    None => return AppEvents::None,
+                    Some(path) => path,
+                };
+                if path.is_dir() {
+                    file_manager.change_dir(path);
+                }
+            }
 
             _ => {}
         }
