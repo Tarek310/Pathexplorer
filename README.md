@@ -14,5 +14,5 @@ A terminal file explorer prototype written in Rust using Ratatui.
 
 - File deletion is permanent
 - This is a prototype and bugs in this software can lead to **significant data loss**
-- Always be considerate of where you use Pathfinder
+- Always be considerate of where you use Pathexplorer
 - **To be safe, don't run it in an environment where the software can reach data that you don't want to lose**
