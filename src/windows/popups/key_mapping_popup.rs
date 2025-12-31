@@ -40,15 +40,19 @@ impl State for KeyMappingPopup {
         let mut popup_area = util::popup_area(area, 20, 30);
 
         let list = List::new(vec![
+            "<Enter> → open file/folder".to_owned(),
+            "<Tab> → change path".to_owned(),
             "<c> → clear selection".to_owned(),
             "<v> → paste selection".to_owned(),
             "<x> → delete selection".to_owned(),
-            "<y> → toggle selection".to_owned(),
+            "<y> → select/unselect".to_owned(),
             "<g> → toggle hidden files".to_owned(),
             "<d> → change folder positions".to_owned(),
             "<s> → open sorting popup".to_owned(),
+            "<n> → create new file/folder".to_owned(),
             "<q> → quit file explorer".to_owned(),
-            "<n> → create new file".to_owned(),
+            "<j/k/h/l> → navigate".to_owned(),
+            "<↑/↓/←/→> → navigate".to_owned(),
         ])
         .block(popup_block)
         .highlight_style(Style::new().red());

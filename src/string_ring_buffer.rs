@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{collections::VecDeque, usize};
+use std::collections::VecDeque;
 
 pub struct StringRingBuffer {
     buffer: VecDeque<String>,
@@ -42,4 +42,3 @@ impl fmt::Display for StringRingBuffer {
         )
     }
 }
-
